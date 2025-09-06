@@ -1,5 +1,7 @@
 # SubTrackr - Subscription Management System
 
+*Built for MindSprint Hackathon*
+
 A full-stack subscription tracking application built with Next.js (frontend) and Node.js/Express (backend).
 
 ## 🚀 Quick Start
