@@ -4,6 +4,23 @@
 
 A full-stack subscription tracking application built with Next.js (frontend) and Node.js/Express (backend).
 
+---
+
+## 🛠️ Tech Stack
+
+| Tool / Technology | Badge |
+|-------------------|-------|
+| **Next.js**       | ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white) |
+| **React**         | ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) |
+| **TailwindCSS**   | ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white) |
+| **Node.js**       | ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white) |
+| **Express.js**    | ![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge) |
+| **MongoDB**       | ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white) |
+| **SendGrid**      | ![SendGrid](https://img.shields.io/badge/SendGrid-0086FF?style=for-the-badge&logo=sendgrid&logoColor=white) |
+| **TypeScript**    | ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) |
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
