@@ -37,14 +37,37 @@ class NotificationBridge {
       }, {
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 10000 // 10 second timeout
       });
       
       console.log('✅ Test email sent via API service');
       return { success: true, message: 'Test email sent successfully' };
     } catch (error) {
       console.error('❌ Failed to send test email via API service:', error.message);
-      return { success: false, error: error.message };
+      
+      // Try fallback direct email service
+      try {
+        console.log('🔄 Attempting fallback email service...');
+        const { sendEmail } = await import('../utils/emailService.js');
+        
+        await sendEmail(
+          userEmail,
+          'SubTrackr Test Email',
+          `<h2>Hello Test User!</h2>
+           <p>This is a test email to verify your email configuration is working correctly.</p>
+           <p>If you received this email, your SubTrackr email system is functioning properly!</p>
+           <br>
+           <p><strong>SubTrackr Team</strong></p>`,
+          `Hello Test User! This is a test email to verify your email configuration is working correctly. If you received this email, your SubTrackr email system is functioning properly! - SubTrackr Team`
+        );
+        
+        console.log('✅ Fallback test email sent successfully');
+        return { success: true, message: 'Test email sent successfully (via fallback service)' };
+      } catch (fallbackError) {
+        console.error('❌ Fallback email service also failed:', fallbackError.message);
+        return { success: false, error: `Both API service and fallback failed. API: ${error.message}, Fallback: ${fallbackError.message}` };
+      }
     }
   }
 

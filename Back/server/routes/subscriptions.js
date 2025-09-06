@@ -150,10 +150,10 @@ router.put("/:id", protect, validateUpdateSubscription, checkValidationResult, a
 });
 
 // @route   DELETE /api/subscriptions/:id
-// @desc    Delete subscription
-router.delete("/:id", protect, async (req, res) => {
+// @desc    Delete a subscription
+router.delete("/:id", protect, async (req, res, next) => {
   try {
-    const subscription = await Subscription.findOneAndDelete({
+    const subscription = await Subscription.findOne({
       _id: req.params.id,
       userId: req.user._id,
     });
@@ -162,12 +162,46 @@ router.delete("/:id", protect, async (req, res) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    // Delete associated notifications
+    await Subscription.findByIdAndDelete(req.params.id);
+
+    // Also delete related notifications
     await Notification.deleteMany({ subscriptionId: req.params.id });
 
-    res.json({ message: "Subscription removed" });
+    logger.info(
+      `Subscription deleted: ${subscription.serviceName} for user: ${req.user._id}`
+    );
+    
+    res.json({ message: "Subscription deleted successfully" });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    next(error);
+  }
+});
+
+// @route   POST /api/subscriptions/create-sample
+// @desc    Create a sample subscription for testing
+router.post("/create-sample", protect, async (req, res, next) => {
+  try {
+    const sampleSubscription = {
+      userId: req.user._id,
+      serviceName: "Sample Netflix",
+      category: "entertainment",
+      cost: 15.99,
+      billingCycle: "monthly",
+      nextRenewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      paymentMethod: "Test Credit Card",
+      status: "active",
+      notes: "Sample subscription for testing delete functionality"
+    };
+
+    const subscription = await Subscription.create(sampleSubscription);
+
+    logger.info(
+      `Sample subscription created: ${subscription.serviceName} for user: ${req.user._id}`
+    );
+    
+    res.status(201).json(subscription);
+  } catch (error) {
+    next(error);
   }
 });
 

@@ -268,6 +268,18 @@ class ApiClient {
     });
   }
 
+  async createSampleNotifications(): Promise<any> {
+    return this.request('/notifications/create-samples', {
+      method: 'POST',
+    });
+  }
+
+  async createSampleSubscription(): Promise<any> {
+    return this.request('/subscriptions/create-sample', {
+      method: 'POST',
+    });
+  }
+
   // Advanced notification features (via API bridge)
   async sendTestEmail(type: 'welcome' | 'renewal_reminder' = 'welcome'): Promise<any> {
     return this.request('/notifications/test-email', {

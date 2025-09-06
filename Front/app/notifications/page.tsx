@@ -30,19 +30,59 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Sample notifications for demo purposes
+  const sampleNotifications = [
+    {
+      id: 'sample-1',
+      title: 'Netflix Subscription Renewal',
+      message: 'Your Netflix subscription will renew in 3 days. Amount: $15.99',
+      date: new Date().toLocaleDateString(),
+      status: 'pending',
+      type: 'renewal'
+    },
+    {
+      id: 'sample-2', 
+      title: 'Spotify Premium Renewal',
+      message: 'Your Spotify Premium subscription will renew in 7 days. Amount: $9.99',
+      date: new Date().toLocaleDateString(),
+      status: 'pending',
+      type: 'renewal'
+    },
+    {
+      id: 'sample-3',
+      title: 'Adobe Creative Cloud Payment',
+      message: 'Payment processed successfully for Adobe Creative Cloud. Amount: $52.99',
+      date: new Date(Date.now() - 86400000).toLocaleDateString(), // Yesterday
+      status: 'sent',
+      type: 'payment'
+    }
+  ]
+
   // Fetch notifications on component mount
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/')
-    } else {
-      fetchNotifications()
+    const loadNotifications = async () => {
+      if (!isAuthenticated) {
+        console.log('User not authenticated, redirecting to home')
+        router.push('/')
+        return
+      }
+      
+      console.log('User authenticated, fetching notifications')
+      await fetchNotifications()
     }
+
+    loadNotifications()
   }, [isAuthenticated, router])
 
   const fetchNotifications = async () => {
     try {
       setLoading(true)
-      const notificationsData = await apiClient.getNotifications()
+      const response = await apiClient.getNotifications()
+      
+      // Handle both direct array and paginated response
+      const notificationsData = Array.isArray(response) 
+        ? response 
+        : (response as any)?.notifications || []
       
       // Map backend notifications to frontend format
       const mappedNotifications = notificationsData.map((notif: any) => ({
@@ -54,13 +94,31 @@ export default function NotificationsPage() {
         type: notif.message.includes('renewal') ? 'renewal' : 'payment'
       }))
       
-      setNotifications(mappedNotifications)
+      // If no notifications from API, use sample data for demo
+      if (mappedNotifications.length === 0) {
+        console.log('No notifications from API, using sample data')
+        setNotifications(sampleNotifications)
+      } else {
+        setNotifications(mappedNotifications)
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error)
-      // Fallback to empty array if API fails
-      setNotifications([])
+      // Fallback to sample notifications for demo
+      console.log('API error, using sample notifications')
+      setNotifications(sampleNotifications)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const createSampleNotifications = async () => {
+    try {
+      const response = await apiClient.createSampleNotifications()
+      console.log('Sample notifications created:', response)
+      // Refresh notifications
+      await fetchNotifications()
+    } catch (error) {
+      console.error('Error creating sample notifications:', error)
     }
   }
 
@@ -275,13 +333,37 @@ export default function NotificationsPage() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-foreground">Recent Notifications</h3>
-              <Button variant="outline" size="sm" className="border-border bg-transparent">
-                Mark All as Read
-              </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-border bg-transparent"
+                  onClick={createSampleNotifications}
+                >
+                  Create Sample
+                </Button>
+                <Button variant="outline" size="sm" className="border-border bg-transparent">
+                  Mark All as Read
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-3">
-              {notifications.map((notification) => (
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center space-y-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-sm text-muted-foreground">Loading notifications...</p>
+                  </div>
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="text-center py-8 space-y-2">
+                  <Bell className="h-12 w-12 text-muted-foreground mx-auto" />
+                  <h3 className="text-lg font-medium text-foreground">No notifications yet</h3>
+                  <p className="text-sm text-muted-foreground">You'll see subscription reminders and updates here</p>
+                </div>
+              ) : (
+                notifications.map((notification) => (
                 <Card key={notification.id} className="border-border/50 bg-card/50 backdrop-blur">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
@@ -336,7 +418,8 @@ export default function NotificationsPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
 
             {/* Load More */}

@@ -291,11 +291,15 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
+      console.log('Fetching dashboard data...')
+      
       const [subscriptionsData, statsData, notificationCountData] = await Promise.all([
         apiClient.getSubscriptions(),
         apiClient.getDashboardStats().catch(() => null), // Handle if endpoint doesn't exist
         apiClient.getUnreadNotificationCount().catch(() => ({ count: 0 }))
       ])
+      
+      console.log('Raw subscriptions data:', subscriptionsData)
       
       // Map backend subscriptions to frontend format
       const mappedSubscriptions = subscriptionsData.map((sub: any) => ({
@@ -307,9 +311,13 @@ export default function DashboardPage() {
         color: getColorForCategory(sub.category)
       }))
       
+      console.log('Mapped subscriptions:', mappedSubscriptions)
+      
       setSubscriptions(mappedSubscriptions)
       setDashboardStats(statsData)
       setNotificationCount(notificationCountData.count)
+      
+      console.log('Dashboard data loaded successfully')
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
       // On error, show empty state rather than dummy data
@@ -422,12 +430,45 @@ export default function DashboardPage() {
   }
 
   const handleDeleteSubscription = async (id: string | number) => {
+    console.log('🗑️ Delete requested for subscription ID:', id)
+    console.log('🗑️ Current subscriptions:', subscriptions.map(s => ({ id: s.id, _id: s._id, name: s.name })))
+    
+    if (!confirm('Are you sure you want to delete this subscription? This action cannot be undone.')) {
+      console.log('🗑️ Delete cancelled by user')
+      return;
+    }
+
     try {
-      await apiClient.deleteSubscription(id.toString())
-      setSubscriptions(subscriptions.filter((sub) => sub.id !== id && sub._id !== id))
-    } catch (error) {
-      console.error('Error deleting subscription:', error)
-      // You might want to show an error message to the user here
+      console.log('🗑️ Calling API to delete subscription:', id.toString())
+      
+      const result = await apiClient.deleteSubscription(id.toString())
+      console.log('🗑️ API delete response:', result)
+      
+      console.log('🗑️ API call successful, updating state...')
+      const beforeCount = subscriptions.length
+      const updatedSubscriptions = subscriptions.filter((sub) => {
+        const shouldKeep = sub.id !== id && sub._id !== id
+        if (!shouldKeep) {
+          console.log('🗑️ Removing subscription:', { id: sub.id, _id: sub._id, name: sub.name })
+        }
+        return shouldKeep
+      })
+      
+      console.log('🗑️ Before deletion:', beforeCount, 'After deletion:', updatedSubscriptions.length)
+      console.log('🗑️ Updated subscriptions:', updatedSubscriptions.map(s => ({ id: s.id, _id: s._id, name: s.name })))
+      
+      setSubscriptions(updatedSubscriptions)
+      
+      // Show success message
+      const successMessage = `Subscription deleted successfully! (${beforeCount} → ${updatedSubscriptions.length})`
+      alert(successMessage)
+      console.log('🗑️', successMessage)
+      
+    } catch (error: any) {
+      console.error('🗑️ Error deleting subscription:', error)
+      const errorMessage = `Failed to delete subscription: ${error?.message || error?.toString() || 'Unknown error'}`
+      alert(errorMessage)
+      console.log('🗑️', errorMessage)
     }
   }
 
@@ -571,11 +612,11 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Monthly Spend</CardTitle>
+              <CardTitle className="text-sm font-medium text-card-foreground">Total Monthly Spend</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
+              <div className="text-2xl font-bold text-card-foreground">
                 ${dashboardStats?.totalMonthlyCost?.toFixed(2) || summaryData.monthlySpend}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -586,11 +627,11 @@ export default function DashboardPage() {
 
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Annual Spend</CardTitle>
+              <CardTitle className="text-sm font-medium text-card-foreground">Total Annual Spend</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
+              <div className="text-2xl font-bold text-card-foreground">
                 ${((dashboardStats?.totalMonthlyCost || parseFloat(summaryData.monthlySpend)) * 12).toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground">Projected for this year</p>
@@ -599,11 +640,11 @@ export default function DashboardPage() {
 
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Renewals</CardTitle>
+              <CardTitle className="text-sm font-medium text-card-foreground">Upcoming Renewals</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
+              <div className="text-2xl font-bold text-card-foreground">
                 {dashboardStats?.upcomingRenewals?.length || summaryData.upcomingRenewals}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -614,11 +655,11 @@ export default function DashboardPage() {
 
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+              <CardTitle className="text-sm font-medium text-card-foreground">Active Subscriptions</CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
+              <div className="text-2xl font-bold text-card-foreground">
                 {dashboardStats?.totalSubscriptions || summaryData.activeSubscriptions}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -653,6 +694,24 @@ export default function DashboardPage() {
                     <List className="h-4 w-4" />
                   </Button>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      console.log('🧪 Creating sample subscription for testing...')
+                      const result = await apiClient.createSampleSubscription()
+                      console.log('🧪 Sample created:', result)
+                      await fetchDashboardData()
+                      alert('✅ Sample subscription created! Now you can test deletion using the ⋮ menu.')
+                    } catch (error: any) {
+                      console.error('🧪 Failed to create sample:', error)
+                      alert(`❌ Failed to create sample: ${error?.message || 'Unknown error'}`)
+                    }
+                  }}
+                >
+                  🧪 Create Test Subscription
+                </Button>
                 <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -785,7 +844,19 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {subscriptions.length === 0 ? (
+            {loading ? (
+              <Card className="border-border/50 bg-card/50 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="text-center py-12">
+                    <div className="flex items-center justify-center space-x-2 mb-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                    <h4 className="text-lg font-medium text-foreground mb-2">Loading subscriptions...</h4>
+                    <p className="text-muted-foreground">Please wait while we fetch your data</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : subscriptions.length === 0 ? (
               <Card className="border-border/50 bg-card/50 backdrop-blur">
                 <CardContent className="p-6">
                   <div className="text-center py-12">

@@ -43,26 +43,36 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const initAuth = () => {
       const token = apiClient.getToken();
+      const savedUser = localStorage.getItem('user');
+      
       console.log('Auth init - Token found:', !!token);
-      if (token) {
-        // Here you might want to validate the token with the server
-        // For now, we'll just check if the token exists
+      console.log('Auth init - Saved user:', savedUser);
+      
+      if (token && savedUser) {
         try {
-          // You could decode the JWT to get user info
-          // For now, we'll just set a basic user state
-          const savedUser = localStorage.getItem('user');
-          console.log('Auth init - Saved user:', savedUser);
-          if (savedUser) {
-            const userData = JSON.parse(savedUser);
-            console.log('Auth init - Parsed user data:', userData);
+          const userData = JSON.parse(savedUser);
+          console.log('Auth init - Parsed user data:', userData);
+          
+          // Validate that we have the essential user fields
+          if (userData._id && userData.email && userData.name) {
             setUser(userData);
+            console.log('Auth init - User restored successfully');
+          } else {
+            console.log('Auth init - Invalid user data, clearing');
+            apiClient.removeToken();
+            localStorage.removeItem('user');
           }
         } catch (error) {
           console.error('Error parsing saved user:', error);
           apiClient.removeToken();
           localStorage.removeItem('user');
         }
+      } else if (token && !savedUser) {
+        // Token exists but no user data - this shouldn't happen, clear token
+        console.log('Auth init - Token exists but no user data, clearing token');
+        apiClient.removeToken();
       }
+      
       setLoading(false);
     };
 

@@ -1,6 +1,7 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import Notification from "../models/Notification.js";
+import Subscription from "../models/Subscription.js";
 import notificationBridge from "../services/notificationBridge.js";
 import logger from "../utils/logger.js";
 
@@ -10,6 +11,8 @@ const router = express.Router();
 // @desc    Get user notifications
 router.get("/", protect, async (req, res, next) => {
   try {
+    logger.info(`Fetching notifications for user: ${req.user._id}`);
+    
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -22,6 +25,8 @@ router.get("/", protect, async (req, res, next) => {
 
     const total = await Notification.countDocuments({ userId: req.user._id });
 
+    logger.info(`Found ${notifications.length} notifications for user ${req.user._id}`);
+
     res.json({
       notifications,
       pagination: {
@@ -33,6 +38,7 @@ router.get("/", protect, async (req, res, next) => {
       },
     });
   } catch (error) {
+    logger.error('Error fetching notifications:', error);
     next(error);
   }
 });
@@ -134,6 +140,67 @@ router.post("/test-email", protect, async (req, res, next) => {
     }
   } catch (error) {
     logger.error("Test email error:", error);
+    next(error);
+  }
+});
+
+// @route   POST /api/notifications/create-samples
+// @desc    Create sample notifications for testing
+router.post("/create-samples", protect, async (req, res, next) => {
+  try {
+    logger.info(`Creating sample notifications for user: ${req.user._id}`);
+
+    // First, let's find or create some sample subscriptions
+    let subscription = await Subscription.findOne({ userId: req.user._id });
+    
+    if (!subscription) {
+      // Create a sample subscription if none exists
+      subscription = await Subscription.create({
+        userId: req.user._id,
+        serviceName: "Netflix",
+        category: "entertainment",
+        cost: 15.99,
+        billingCycle: "monthly",
+        nextRenewalDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+        paymentMethod: "Credit Card",
+        status: "active"
+      });
+      logger.info(`Created sample subscription: ${subscription._id}`);
+    }
+
+    // Create sample notifications
+    const sampleNotifications = [
+      {
+        userId: req.user._id,
+        subscriptionId: subscription._id,
+        message: `Your ${subscription.serviceName} subscription will renew in 3 days. Amount: $${subscription.cost}`,
+        notifyDate: new Date(),
+        status: "pending"
+      },
+      {
+        userId: req.user._id,
+        subscriptionId: subscription._id,
+        message: `Payment processed successfully for ${subscription.serviceName}. Amount: $${subscription.cost}`,
+        notifyDate: new Date(Date.now() - 86400000), // Yesterday
+        status: "sent"
+      }
+    ];
+
+    // Delete existing sample notifications to avoid duplicates
+    await Notification.deleteMany({ userId: req.user._id });
+
+    // Create new sample notifications
+    const createdNotifications = await Notification.insertMany(sampleNotifications);
+    
+    logger.info(`Created ${createdNotifications.length} sample notifications for user ${req.user._id}`);
+
+    res.json({ 
+      message: "Sample notifications created successfully",
+      count: createdNotifications.length,
+      notifications: createdNotifications
+    });
+  } catch (error) {
+    logger.error("Error creating sample notifications:", error);
     next(error);
   }
 });
