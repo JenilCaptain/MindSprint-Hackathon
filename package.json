@@ -1,0 +1,54 @@
+{
+  "name": "subtrackr-fullstack",
+  "version": "1.0.0",
+  "description": "SubTrackr - Full-stack subscription management application",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd Back/server && npm install && npm run dev",
+    "dev:frontend": "cd Front && npm install && npm run dev",
+    "dev:api": "cd API && npm install && npm start",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:api\" \"npm run dev:frontend\"",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd Back/server && npm start",
+    "start:frontend": "cd Front && npm start",
+    "install:all": "npm install && cd Back/server && npm install && cd ../../Front && npm install && cd ../API && npm install",
+    "build": "cd Front && npm run build",
+    "build:backend": "echo 'Backend does not require build step'",
+    "test": "npm run test:integration",
+    "test:integration": "node test-integration.js",
+    "test:api": "cd Back/server && npm test",
+    "check": "node check-integration.js",
+    "check:health": "curl -f http://localhost:5000/health && curl -f http://localhost:3000",
+    "setup:env": "node scripts/setup-env.js",
+    "lint": "cd Front && npm run lint",
+    "lint:fix": "cd Front && npm run lint -- --fix",
+    "clean": "npm run clean:modules && npm run clean:logs",
+    "clean:modules": "rm -rf node_modules Back/server/node_modules Front/node_modules API/node_modules",
+    "clean:logs": "rm -f Back/server/*.log API/*.log",
+    "security:audit": "npm audit && cd Back/server && npm audit && cd ../../Front && npm audit",
+    "update:deps": "npm update && cd Back/server && npm update && cd ../../Front && npm update",
+    "docker:build": "docker build -t subtrackr .",
+    "docker:run": "docker run -p 3000:3000 -p 5000:5000 subtrackr",
+    "backup:db": "node scripts/backup-database.js",
+    "migrate:db": "node scripts/migrate-database.js",
+    "seed:db": "cd Back/server && node scripts/seed-database.js"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "keywords": ["subscription", "management", "fullstack", "react", "nextjs", "nodejs", "express"],
+  "author": "SubTrackr Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/subtrackr.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/subtrackr/issues"
+  },
+  "homepage": "https://github.com/yourusername/subtrackr#readme"
+}
